@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "PokerNow Master",
+  "version": "2.0",
+  "description": "Expert-level assistant for PokerNow online poker rooms.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "*://*.pokernow.club/*",
+    "https://*.firebaseio.com/*",
+    "https://*.googleapis.com/*",
+    "https://*.stripe.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://securetoken.googleapis.com https://apis.google.com https://accounts.google.com https://*.stripe.com"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "signup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.pokernow.club/*"
+      ],
+      "js": [
+        "lib/poker-evaluator.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content.js",
+        "lib/poker-evaluator.js"
+      ],
+      "matches": ["*://*.pokernow.club/*"],
+      "use_dynamic_url": false
+    }
+  ]
+} 

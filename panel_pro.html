@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PokerNow Master Panel – Pro</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<!-- Firebase SDK (same local copies used elsewhere) -->
+<script src="vendor/firebase-app-compat.js"></script>
+<script src="vendor/firebase-auth-compat.js"></script>
+<script src="vendor/firebase-firestore-compat.js"></script>
+<style>
+:root {
+  --bg-panel-a:#0d1115;
+  --bg-panel-b:#0b0e11;
+  --border-soft:rgba(255,255,255,0.06);
+  --text-main:#f5f7fa;
+  --text-dim:#88949f;
+  --accent:#06b7c9;
+  --accent-glow:rgba(6,183,201,0.45);
+  --success:#2fb579;
+  --success-grad:linear-gradient(90deg,#2fb579,#1f8556);
+  --grad-pro:linear-gradient(100deg,#06b7c9,#11d0e3 45%,#4df0ff);
+  --panel-radius:22px;
+  --font-stack:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;
+}
+/* SNIPPET FROM USER STARTS */
+*{box-sizing:border-box;}
+body {
+  margin:0;
+  background:#070a0d;
+  font-family:var(--font-stack);
+  color:var(--text-main);
+  padding:40px 20px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  min-height:100vh;
+}
+.panel {
+  width:380px;
+  background:linear-gradient(145deg,var(--bg-panel-a),var(--bg-panel-b));
+  border:1px solid var(--border-soft);
+  border-radius:var(--panel-radius);
+  padding:32px 30px 26px;
+  position:relative;
+  box-shadow:
+    0 20px 48px -14px rgba(0,0,0,0.6),
+    0 2px 4px -1px rgba(0,0,0,0.4),
+    inset 0 0 0 1px rgba(255,255,255,0.02);
+  overflow:hidden;
+  font-size:14px;
+}
+.panel::before,.panel::after{content:"";position:absolute;border-radius:50%;filter:blur(42px);pointer-events:none;}
+.panel::before{width:420px;height:420px;top:-160px;right:-200px;background:radial-gradient(circle at center,#06b7c9,transparent 70%);opacity:.2;}
+.panel::after{width:320px;height:320px;bottom:-140px;left:-120px;background:radial-gradient(circle at center,#11d0e3,transparent 70%);opacity:.12;}
+.header{text-align:center;margin:0 0 20px;position:relative;z-index:2;}
+.header h1{margin:0;font-size:24px;font-weight:600;letter-spacing:.6px;background:var(--grad-pro);-webkit-background-clip:text;color:transparent;}
+.tagline{margin:10px 0 0;font-size:13px;line-height:1.35;color:var(--text-dim);font-weight:500;}
+.badge-pro{display:inline-flex;align-items:center;gap:6px;padding:6px 12px 5px;border-radius:40px;background:var(--grad-pro);color:#041316;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;box-shadow:0 2px 8px -2px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,0.08);position:absolute;top:16px;right:16px;}
+.badge-pro svg{width:14px;height:14px;}
+.primary-btn{width:100%;height:52px;border:0;border-radius:18px;background:var(--grad-pro);color:#041316;font-size:15px;font-weight:600;letter-spacing:.3px;cursor:pointer;box-shadow:0 6px 18px -6px rgba(0,180,200,0.55),0 0 0 1px rgba(255,255,255,0.05);transition:filter .25s, transform .2s;margin-bottom:12px;}
+.primary-btn:hover{filter:brightness(1.12);}
+.primary-btn:active{transform:scale(.985);}
+.flex-row{display:flex;gap:10px;margin-top:4px;}
+.secondary-btn,.ghost-btn{flex:1;height:44px;border-radius:14px;font-weight:600;font-size:13px;cursor:pointer;transition:background .25s, color .25s, transform .2s;}
+.secondary-btn{border:0;background:#1c252c;color:#e2e8ec;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.05);}
+.secondary-btn:hover{background:#232e37;}
+.secondary-btn:active{transform:scale(.985);}
+.ghost-btn{background:#141b21;border:1px solid rgba(255,255,255,0.05);color:#c4ccd2;}
+.ghost-btn:hover{color:#fff;background:#1b242b;}
+.ghost-btn:active{transform:scale(.985);}
+.section{margin-top:24px;padding:20px 20px 22px;background:linear-gradient(140deg,#121a22,#0f1419);border:1px solid rgba(255,255,255,0.05);border-radius:20px;position:relative;box-shadow:0 4px 16px -6px rgba(0,0,0,0.55),inset 0 0 0 1px rgba(255,255,255,0.02);z-index:2;}
+.section-header{font-size:11px;text-transform:uppercase;letter-spacing:1.6px;font-weight:600;color:rgba(255,255,255,0.45);margin:0 0 14px;}
+.row-split{display:flex;justify-content:space-between;align-items:center;gap:14px;}
+.user-email{font-size:13px;font-weight:600;color:var(--text-main);word-break:break-all;}
+.status-pill{font-size:11px;font-weight:600;letter-spacing:.5px;padding:6px 14px 5px;border-radius:40px;background:var(--success-grad);color:#04160f;box-shadow:0 0 0 1px rgba(255,255,255,0.05);}
+.plan-note{font-size:12px;line-height:1.5;color:var(--text-dim);margin:12px 0 0;}
+.perks{margin:18px 0 4px;display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;font-size:12px;color:var(--text-dim);}
+.perks div{position:relative;padding-left:16px;line-height:1.35;}
+.perks div::before{content:"";width:8px;height:8px;border-radius:3px;background:var(--grad-pro);position:absolute;left:0;top:4px;box-shadow:0 0 0 1px rgba(255,255,255,0.08);}
+.unlimited-block{margin-top:18px;background:#162127;border:1px solid rgba(255,255,255,0.05);border-radius:16px;padding:16px 18px 18px;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.02);}
+.unlimited-label{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;color:rgba(255,255,255,0.55);margin:0 0 10px;display:flex;align-items:center;gap:8px;}
+.unlimited-label svg{width:16px;height:16px;stroke:var(--accent);}
+.unlimited-body{font-size:12.5px;color:var(--text-dim);line-height:1.45;}
+.mini-metrics{display:flex;justify-content:space-between;gap:14px;margin-top:18px;font-size:12px;color:var(--text-dim);flex-wrap:wrap;}
+.mini-metrics .metric{flex:1 1 30%;min-width:90px;}
+.mini-metrics .metric span.val{display:block;margin-top:4px;font-size:14px;font-weight:600;color:var(--text-main);}
+.version{margin-top:28px;text-align:center;font-size:10px;letter-spacing:1px;color:rgba(255,255,255,0.28);}
+/* SNIPPET END */
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="badge-pro">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#041316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7l5 4 4-8 4 8 5-4-2 10H5L3 7z"/>
+      </svg>
+      Pro
+    </div>
+    <div class="header">
+      <h1><span>PokerNow Master</span></h1>
+      <p class="tagline">Advanced real time decision intelligence for serious players</p>
+    </div>
+
+    <button class="primary-btn" id="hudBtn">Launch HUD</button>
+    <div class="flex-row">
+      <button class="ghost-btn" id="signOutBtn">Sign Out</button>
+    </div>
+
+    <div class="section">
+      <h2 class="section-header">Account</h2>
+      <div class="row-split">
+        <div class="user-email" id="userEmail">...</div>
+        <div class="status-pill" id="statusPill">Active</div>
+      </div>
+      <p class="plan-note" id="planNote">Pro plan renews in <strong>—</strong>.</p>
+
+      <div class="perks">
+        <div>Unlimited hands</div>
+        <div>Live HUD overlays</div>
+        <div>Equity engine</div>
+        <div>Range sandbox</div>
+        <div>Priority updates</div>
+        <div>Cloud sync</div>
+      </div>
+
+      <div class="unlimited-block">
+        <div class="unlimited-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13c-1.5 2-3 3-5 3-3 0-5-3-5-6s2-6 5-6c2 0 3.5 1 5 3"/>
+            <path d="M6 11c1.5-2 3-3 5-3 3 0 5 3 5 6s-2 6-5 6c-2 0-3.5-1-5-3"/>
+          </svg>
+          Unlimited Plan
+        </div>
+        <div class="unlimited-body">
+          No usage caps. All premium processing and analytics are fully enabled.
+        </div>
+      </div>
+
+      <div class="mini-metrics">
+        <div class="metric">
+          <span>Lifetime Hands Played</span>
+          <span class="val" id="handsMonth">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="version">v2.0 • Pro Unlimited</div>
+  </div>
+
+<script src="panel_pro.js"></script>
+</body>
+</html> 
