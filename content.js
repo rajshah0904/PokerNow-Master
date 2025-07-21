@@ -306,7 +306,9 @@
     chrome.runtime.sendMessage({ action: 'check_access' }, (res) => {
       if (res && res.allowed === false) {
         if (overlay) overlay.style.display = 'none';
-        showTrialLimitNotice();
+        if (res.subscriptionType === 'INACTIVE') {
+          showTrialLimitNotice();
+        }
         return;
       }
 
@@ -368,6 +370,9 @@
           const potVal=totalLabel ? parseFloat(totalLabel.textContent.replace(/[^\d.]/g,''))||0 : 0;
           recordNewHandBlinds(potVal);
         },50);
+        // Notify background script – increment hands counter
+        chrome.runtime.sendMessage({ action: 'hand_complete' });
+
         // Reset per-hand trackers
         raiseCountThisStreet = 0;
         preflopRaiseCount = 0;

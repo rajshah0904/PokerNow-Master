@@ -5,6 +5,7 @@
   "description": "Expert-level assistant for PokerNow online poker rooms.",
   "permissions": [
     "activeTab",
+    "tabs",
     "scripting",
     "storage",
     "offscreen"
@@ -16,7 +17,7 @@
     "https://*.stripe.com/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://securetoken.googleapis.com https://apis.google.com https://accounts.google.com https://*.stripe.com"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://securetoken.googleapis.com https://apis.google.com https://accounts.google.com https://*.stripe.com https://*.cloudfunctions.net; font-src 'self' data: https://*.stripe.com; frame-src https://*.stripe.com https://*.web.app https://*.firebaseapp.com"
   },
   "background": {
     "service_worker": "background.js"
@@ -40,9 +41,11 @@
     {
       "resources": [
         "content.js",
-        "lib/poker-evaluator.js"
+        "lib/poker-evaluator.js",
+        "checkout_done.html",
+        "checkout_done.js"
       ],
-      "matches": ["*://*.pokernow.club/*"],
+      "matches": ["*://*.pokernow.club/*", "https://checkout.stripe.com/*"],
       "use_dynamic_url": false
     }
   ]

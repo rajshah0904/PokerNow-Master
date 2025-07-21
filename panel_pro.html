@@ -104,6 +104,9 @@ body {
 
     <button class="primary-btn" id="hudBtn">Launch HUD</button>
     <div class="flex-row">
+      <form method="POST" action="https://us-central1-pokernow-bot.cloudfunctions.net/createCustomerPortalSession" style="flex:1;">
+        <button type="submit" id="portalBtn" class="secondary-btn">Manage Subscription</button>
+      </form>
       <button class="ghost-btn" id="signOutBtn">Sign Out</button>
     </div>
 
@@ -140,7 +143,7 @@ body {
       <div class="mini-metrics">
         <div class="metric">
           <span>Lifetime Hands Played</span>
-          <span class="val" id="handsMonth">—</span>
+          <span class="val" id="handsLifetime">—</span>
         </div>
       </div>
     </div>

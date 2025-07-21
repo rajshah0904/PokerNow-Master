@@ -27,23 +27,51 @@ async function computeAndPersistSubType(uid){
   const userRef = db.collection('users').doc(uid);
   const doc = await userRef.get();
   const data = doc.data()||{};
-  const played = data.handsPlayed || 0;
+  const played = typeof data.handsPlayed === 'number' ? data.handsPlayed : 0;
 
-  // Admin override
-  const adminActive = data.adminActive === true;
-
-  // Check for active Stripe subscription via extension data
+  // Fetch user subscriptions (the Stripe extension keeps history)
   const subsSnap = await db.collection(CUSTOMER_COLLECTION).doc(uid).collection('subscriptions')
-    .where('status','in',['trialing','active']).get();
-  const stripeActive = !subsSnap.empty;
+    .where('status','in',['trialing','active','canceled']) // include canceled because it may still be active until period end
+    .get();
 
-  const effectiveActive = adminActive || stripeActive;
+  // Determine if any subscription is currently in-force
+  let stripeActive = false;
+  const nowSec = Date.now() / 1000;
+  subsSnap.forEach(docSnap => {
+    const sub = docSnap.data() || {};
+    const status = sub.status;
+    if (status === 'trialing' || status === 'active') {
+      stripeActive = true;
+      return; // short-circuit forEach
+    }
+    if (status === 'canceled') {
+      // If it was set to cancel at period end, Stripe marks status=canceled
+      // but keeps current_period_end in the future; allow access until then.
+      const end = sub.current_period_end || 0;
+      if (end > nowSec) {
+        stripeActive = true;
+      }
+    }
+  });
 
-  const subType = effectiveActive ? 'ACTIVE' : (played < FREE_HANDS ? 'FREE_TRIAL' : 'INACTIVE');
+  const subType = stripeActive ? 'ACTIVE' : (played < FREE_HANDS ? 'FREE_TRIAL' : 'INACTIVE');
 
   const authUser = firebase.auth().currentUser;
   const emailField = authUser && authUser.uid === uid ? { email: authUser.email } : {};
-  await userRef.set({ subscription_type: subType, ...emailField }, { merge: true });
+
+  // Prepare base update object
+  const update = { subscription_type: subType, ...emailField };
+
+  // Initialise metadata for brand-new users or missing fields
+  if(!doc.exists || !data.createdAt){
+    update.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+  }
+  // Only initialize handsPlayed for brand-new users (to avoid overwriting existing counts)
+  if (!doc.exists) {
+    update.handsPlayed = 0;
+  }
+
+  await userRef.set(update, { merge: true });
 }
 
 // Ensure popup reflects current auth tier
@@ -55,7 +83,6 @@ auth.onAuthStateChanged(async (user)=>{
   const doc = await db.collection('users').doc(user.uid).get();
   const data = doc.data()||{};
   let subTypeCurrent = data.subscription_type || 'INACTIVE';
-  if (data.adminActive === true) subTypeCurrent = 'ACTIVE';
   if(subTypeCurrent === 'ACTIVE'){
     chrome.action.setPopup({popup:'panel_pro.html'});
   }else{
@@ -125,7 +152,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         const doc   = await userRef.get();
         const data  = doc.data() || {};
         const played= data.handsPlayed || 0;
-        // Recompute using helper (handles adminActive)
+        // Recompute subscription type after hand played
         await computeAndPersistSubType(uid);
 
         if ((await userRef.get()).data().subscription_type === 'INACTIVE') {
@@ -185,6 +212,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       width: 420,
       height: 640
     });
+    return; // no async response
+  }
+
+  // Close checkout tab once subscription becomes active
+  if (msg.action === 'close_self') {
+    if (sender.tab && sender.tab.id) {
+      chrome.tabs.remove(sender.tab.id);
+    }
     return; // no async response
   }
 }); 

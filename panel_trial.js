@@ -2,13 +2,11 @@
 (function(){
   const FREE_HANDS = 20;
   const hudBtn = document.getElementById('hudBtn');
-  const hudStatus = document.getElementById('hudStatus');
   const userEmailEl = document.getElementById('userEmail');
   const usageFill = document.getElementById('usageFill');
   const usagePctLabel = document.getElementById('usagePctLabel');
   const remainText = document.getElementById('remainText');
   const playedText = document.getElementById('playedText');
-  const sessionHands = document.getElementById('sessionHands');
   const signOutBtn = document.getElementById('signOutBtn');
   const planPill   = document.getElementById('planPill');
   const upgradeBtn = document.getElementById('upgradeBtn');
@@ -47,7 +45,6 @@
       planPill.textContent = 'Inactive';
       hudBtn.disabled = true;
       hudBtn.textContent = 'HUD Locked';
-      hudStatus.textContent = 'Locked';
     } else {
       planPill.textContent = 'Free Trial';
       hudBtn.disabled = false;
@@ -64,7 +61,6 @@
         if (!tabs[0]) return;
         chrome.tabs.sendMessage(tabs[0].id, { action: 'toggle' }, res => {
           hudVisible = res && res.visible;
-          hudStatus.textContent = hudVisible ? 'Visible' : 'Hidden';
           hudBtn.textContent = hudVisible ? 'Hide HUD' : 'Show HUD';
         });
       });
@@ -76,7 +72,6 @@
     if (!tabs[0]) return;
     chrome.tabs.sendMessage(tabs[0].id, { action: 'get_state' }, res => {
       hudVisible = res && res.visible;
-      hudStatus.textContent = hudVisible ? 'Visible' : 'Hidden';
       hudBtn.textContent = hudVisible ? 'Hide HUD' : 'Show HUD';
     });
   });
@@ -96,22 +91,38 @@
     if (!docSnap.exists) {
       await docRef.set({
         email: user.email,
-        handsPlayed: 0,
         subscription_type: 'FREE_TRIAL',
         created: firebase.firestore.FieldValue.serverTimestamp()
       });
       updateUI(0, 'FREE_TRIAL');
     }
-    // live updates
+    // Watch user document for changes
     docRef.onSnapshot(snap => {
       const data = snap.data() || {};
       const played = data.handsPlayed || 0;
-      let subType = data.adminActive === true ? 'ACTIVE' : (data.subscription_type || 'FREE_TRIAL');
+      let subType = data.subscription_type || 'FREE_TRIAL';
       if (subType === 'FREE_TRIAL' && played >= FREE_HANDS) {
         subType = 'INACTIVE';
         docRef.set({ subscription_type: 'INACTIVE' }, { merge:true }); // persist change
       }
       updateUI(played, subType);
+
+      // If became ACTIVE, redirect to Pro panel automatically
+      if (subType === 'ACTIVE') {
+        chrome.action.setPopup({ popup: 'panel_pro.html' });
+        window.location.href = chrome.runtime.getURL('panel_pro.html');
+      }
     });
+
+    // Additionally listen to subscriptions collection to react immediately to status changes
+    db.collection('users').doc(user.uid)
+      .collection('subscriptions')
+      .where('status', 'in', ['trialing', 'active'])
+      .onSnapshot(async (subSnap) => {
+        if (!subSnap.empty) {
+          // Sub active – update user doc and redirect
+          await docRef.set({ subscription_type: 'ACTIVE' }, { merge: true });
+        }
+      });
   });
 })(); 

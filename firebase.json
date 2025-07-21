@@ -5,8 +5,14 @@
       {
         "source": "/offscreen_auth.html",
         "headers": [
-          { "key": "X-Frame-Options", "value": "ALLOWALL" },
-          { "key": "Content-Security-Policy", "value": "frame-ancestors * chrome-extension://*" }
+          {
+            "key": "X-Frame-Options",
+            "value": "ALLOWALL"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "frame-ancestors * chrome-extension://*"
+          }
         ]
       }
     ],
@@ -15,5 +21,21 @@
       "**/.*",
       "**/node_modules/**"
     ]
-  }
-} 
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint"
+      ]
+    }
+  ]
+}

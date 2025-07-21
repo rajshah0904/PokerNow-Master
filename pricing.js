@@ -20,10 +20,11 @@
     if(!user){ location.href = chrome.runtime.getURL('signup.html'); return; }
     const custRef = db.collection('users').doc(user.uid);
     custRef.set({}, { merge:true }).then(async ()=>{
+      const closeUrl = chrome.runtime.getURL('checkout_done.html');
       custRef.collection('checkout_sessions').add({
         price: priceId,
-        success_url: window.location.origin,
-        cancel_url: window.location.origin,
+        success_url: closeUrl,
+        cancel_url: closeUrl,
         allow_promotion_codes: true // enable coupon entry on Stripe Checkout
       }).then((docRef)=>{
         custRef.collection('checkout_sessions').doc(docRef.id)
@@ -53,6 +54,9 @@
       btnWeekly.disabled = btnMonthly.disabled = false;
       btnWeekly.addEventListener('click', ()=>startCheckout(PRICE_WEEKLY, btnWeekly));
       btnMonthly.addEventListener('click', ()=>startCheckout(PRICE_MONTHLY, btnMonthly));
+
+      // No additional listener needed – background script picks up subscription change
+
     } else {
       btnWeekly.addEventListener('click', ()=>location.href = chrome.runtime.getURL('signup.html'));
       btnMonthly.addEventListener('click', ()=>location.href = chrome.runtime.getURL('signup.html'));
