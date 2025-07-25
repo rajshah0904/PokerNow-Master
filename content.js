@@ -511,12 +511,6 @@
 
       updateOverlay(stats);
 
-      // Uncomment for debugging:
-      // console.debug('DBG', {
-      //   street, preflop, callAmt, pot, largestOpp, raiseCountThisStreet,
-      //   preflopRaiseCount, unopenedPreflop, isLimpPot, facingOpen,
-      //   heroBet, heroPrevBet, equity: stats.equityPct.toFixed(3), action
-      // });
     });
   }
 

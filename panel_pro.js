@@ -70,6 +70,14 @@ if (portalBtn) {
   });
 }
 
+  // Handle legal links
+  document.querySelectorAll('.legal a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      chrome.tabs.create({ url: link.href });
+    });
+  });
+
   signOutBtn.addEventListener('click', () => {
     auth.signOut().then(()=>{
       chrome.action.setPopup({ popup: 'signup.html' });

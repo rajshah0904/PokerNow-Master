@@ -4,14 +4,12 @@
   <meta charset="utf-8">
   <title>Google sign-in helper (off-screen)</title>
   <!-- Firebase Web SDK (standard, NOT web-extension) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-    import { getAuth, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-
-    // Same config used inside the extension
-    const app = initializeApp({
+  <!-- Load local Firebase compat builds to avoid remote CDN -->
+  <script src="../vendor/firebase-app-compat.js"></script>
+  <script src="../vendor/firebase-auth-compat.js"></script>
+  <script>
+    // Initialize Firebase using the same config as the extension
+    const app = firebase.initializeApp({
       apiKey: 'AIzaSyDMRtco7UXpAvPHb3HE52_54dafHytYDpw',
       authDomain: 'pokernow-bot.firebaseapp.com',
       projectId: 'pokernow-bot',
@@ -20,15 +18,16 @@
       appId: '1:54978395059:web:8ffd353787671dc609e9c6'
     });
 
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-    const PARENT = location.ancestorOrigins[0];
-    const relay = (r) => parent.postMessage(JSON.stringify(r), PARENT);
+    const auth = firebase.auth(app);
+    const provider = new firebase.auth.GoogleAuthProvider();
 
-    // Wait for off-screen doc message, then run sign-in
-    addEventListener('message', (e) => {
-      if (e.data?.initAuth) {
-        signInWithPopup(auth, provider).then(relay).catch(relay);
+    const PARENT_ORIGIN = location.ancestorOrigins ? location.ancestorOrigins[0] : '*';
+    const relay = (result) => parent.postMessage(JSON.stringify(result), PARENT_ORIGIN);
+
+    // Listen for messages from the offscreen initiator
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.initAuth) {
+        auth.signInWithPopup(provider).then(relay).catch(relay);
       }
     });
   </script>

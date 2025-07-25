@@ -51,6 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Legal links – open externally using chrome.tabs API for maximum compatibility
+  document.querySelectorAll('.legal a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      chrome.tabs.create({ url: link.href });
+    });
+  });
+
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     const email=emailInput.value.trim();
